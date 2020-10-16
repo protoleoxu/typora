@@ -157,6 +157,9 @@ sbit：用户目录，设置后使得目录下文件只有文件所有者可以�
 
 ## **硬件资源管理**
 
+> ??? 为什么要进程分组
+> ??? 进程分组的依据
+
 ### **CGROUP**
 
 Linux Control Group 简称 cgroup。由内核提供的一种限制单一进程或多个进程使用资源的机制。
@@ -168,5 +171,34 @@ Linux Control Group 简称 cgroup。由内核提供的一种限制单一进程�
 cgroup为每种可控制的资源定义了一个子系统。子系统不仅包含可分配资源的子系统，也包含监控类型的子系统。
 
 ##### **hierarchy**
+
+由一些cgroup构成的树状结构层次。层次在创建时会默认创建顶级cgroup（root cgroup），该cgroup中包含系统中所有进程。
+
+##### **规则**
+
+1. 单个层级可以拥有一个或多个子系统。
+2. 子系统不能同时附加在两个或以上的层次上。
+3. 层次在创建时会默认创建顶级cgroup（root cgroup），该cgroup中包含系统中所有进程。
+4. 一个任务（进程）可以位于多个cgroup中，只要每个cgroup处于不同的层次结构中即可。
+5. 系统中的进程（任务）创建子进程（任务）时，该子任务自动成为其父进程所在 cgroup 的成员。然后可根据需要将该子任务移动到不同的 cgroup 中，但开始时它总是继承其父任务的 cgroup。
+
+##### 默认层级
+
+系统资源会默认分为四个cgroup：user、system、machine、-。
+systemd会默认创建slice、scope、service单位层级。
+每个cgroup都是一个slice，可以由子slice。
+
+**默认cgroup**：
+
+- user.slice：用户会话默认位置，每个用户会话都会在该 slice 下面创建一个子 slice，如果同一个用户多次登录该系统，仍然会使用相同的子 slice。
+- system.slice：所有系统 service 的默认位置。
+- machine.slice：所有虚拟机和 Linux 容器的默认位置。
+- -.slice：根slice。
+
+**单位层级类型**：
+
+- slice：一组按照层级排列的单位层级。slice不包含进程，进程包含在service和scope中，slice会组建一个包含service、scope的层级。
+- scope：一组外部创建的进程。由任意进程通过fork()函数启动或停止，然后在systemd在运行时注册。用户会话、容器、虚拟机包含在scope中。
+- service：一个或一组进程。由systemd依据配置文件启动。
 
 
